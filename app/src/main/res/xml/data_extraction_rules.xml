@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Exclude sensitive database files -->
+        <exclude domain="database" path="guitar_bass_practice.db" />
+        <exclude domain="database" path="guitar_bass_practice.db-shm" />
+        <exclude domain="database" path="guitar_bass_practice.db-wal" />
+    </cloud-backup>
+    
+    <device-transfer>
+        <!-- Include user data for device transfers -->
+        <include domain="sharedpref" path="." />
+        <include domain="database" />
+        <include domain="file" path="exercises/" />
+    </device-transfer>
+</data-extraction-rules>
