@@ -130,14 +130,26 @@ class MainViewModel @Inject constructor(
     }
 
     fun handlePlaybackEvent(event: ExerciseEngineEvent) {
-        val newState = exerciseEngine.handleEvent(event)
+        val currentState = _playbackState.value
+        val newState = exerciseEngine.handleEvent(event, currentState)
         _playbackState.value = newState
 
         // Start exercise execution if play is pressed
         if (event is ExerciseEngineEvent.Play && _uiState.value.currentExercise != null) {
             viewModelScope.launch {
-                exerciseEngine.executeExercise(_uiState.value.currentExercise!!).collect { state ->
-                    _playbackState.value = state
+                try {
+                    exerciseEngine.executeExercise(
+                        exercise = _uiState.value.currentExercise!!,
+                        initialState = newState
+                    ).collect { state ->
+                        _playbackState.value = state
+                    }
+                } catch (e: Exception) {
+                    // Handle exercise execution errors gracefully
+                    _playbackState.value = newState.copy(isPlaying = false)
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Playback error: ${e.message}"
+                    )
                 }
             }
         }

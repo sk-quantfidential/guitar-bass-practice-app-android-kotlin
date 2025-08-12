@@ -6,8 +6,9 @@ import com.quantfidential.guitarbasspractice.util.FretPosition
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.ensureActive
 import javax.inject.Inject
-import javax.inject.Singleton
+import kotlin.coroutines.coroutineContext
 
 data class ExercisePlaybackState(
     val isPlaying: Boolean = false,
@@ -31,120 +32,146 @@ sealed class ExerciseEngineEvent {
     data class SeekTo(val beat: Float) : ExerciseEngineEvent()
 }
 
-@Singleton
+/**
+ * Stateless exercise playback engine that manages exercise execution.
+ * State should be maintained by the calling component (e.g., ViewModel).
+ */
 class ExerciseEngine @Inject constructor() {
     
-    private var currentExercise: Exercise? = null
-    private var playbackState = ExercisePlaybackState()
-    
-    fun executeExercise(exercise: Exercise): Flow<ExercisePlaybackState> = flow {
-        currentExercise = exercise
+    /**
+     * Executes an exercise with proper cancellation support and memory management.
+     * @param exercise The exercise to execute
+     * @param initialState The initial playback state
+     * @return Flow of playback states during execution
+     */
+    fun executeExercise(
+        exercise: Exercise, 
+        initialState: ExercisePlaybackState = ExercisePlaybackState()
+    ): Flow<ExercisePlaybackState> = flow {
         val notes = exercise.notes.sortedBy { it.beat }
         val totalBeats = notes.maxOfOrNull { it.beat + it.duration }?.toFloat() ?: 4f
-        val beatDurationMs = (60000 / playbackState.bpm).toLong()
         
-        playbackState = playbackState.copy(
+        var currentState = initialState.copy(
             bpm = exercise.playback.bpm,
             loop = exercise.playback.loop,
-            metronome = exercise.playback.metronome
+            metronome = exercise.playback.metronome,
+            isPlaying = true
         )
         
-        emit(playbackState)
+        emit(currentState)
         
-        while (true) {
-            if (!playbackState.isPlaying) {
-                delay(100)
-                continue
-            }
-            
-            val currentBeat = playbackState.currentBeat
-            val activeNotes = notes.filter { note ->
-                note.beat.toFloat() <= currentBeat && note.beat.toFloat() + note.duration.toFloat() > currentBeat
-            }
-            
-            val highlightedPositions = activeNotes.map { note ->
-                FretPosition(
-                    string = note.stringNumber,
-                    fret = note.fret,
-                    note = note.noteName,
-                    isHighlighted = true
+        try {
+            while (currentState.isPlaying) {
+                coroutineContext.ensureActive() // Check for cancellation
+                
+                val beatDurationMs = calculateBeatDuration(currentState.bpm)
+                val currentBeat = currentState.currentBeat
+                
+                // Calculate active notes and positions
+                val activeNotes = findActiveNotes(notes, currentBeat)
+                val highlightedPositions = createHighlightedPositions(activeNotes)
+                val progress = calculateProgress(currentBeat, totalBeats)
+                val currentNoteIndex = findCurrentNoteIndex(notes, currentBeat)
+                
+                currentState = currentState.copy(
+                    currentBeat = currentBeat,
+                    progress = progress,
+                    currentNoteIndex = currentNoteIndex,
+                    highlightedPositions = highlightedPositions
                 )
-            }
-            
-            val progress = if (totalBeats > 0) currentBeat / totalBeats else 0f
-            val currentNoteIndex = notes.indexOfFirst { it.beat.toFloat() > currentBeat }.let { 
-                if (it == -1) notes.size else it 
-            }
-            
-            playbackState = playbackState.copy(
-                currentBeat = currentBeat,
-                currentNoteIndex = currentNoteIndex,
-                progress = progress,
-                highlightedPositions = highlightedPositions
-            )
-            
-            emit(playbackState)
-            
-            // Check if we've reached the end
-            if (currentBeat >= totalBeats) {
-                if (playbackState.loop) {
-                    playbackState = playbackState.copy(currentBeat = 0f)
+                
+                emit(currentState)
+                
+                // Advance to next beat
+                val nextBeat = currentBeat + BEAT_INCREMENT
+                
+                if (nextBeat >= totalBeats) {
+                    if (currentState.loop) {
+                        currentState = currentState.copy(currentBeat = 0f)
+                    } else {
+                        currentState = currentState.copy(
+                            isPlaying = false, 
+                            currentBeat = 0f,
+                            progress = 1f
+                        )
+                        emit(currentState)
+                        break
+                    }
                 } else {
-                    playbackState = playbackState.copy(
-                        isPlaying = false,
-                        currentBeat = 0f,
-                        highlightedPositions = emptyList()
-                    )
+                    currentState = currentState.copy(currentBeat = nextBeat)
                 }
-            } else {
-                // Advance beat
-                val nextBeat = currentBeat + (beatDurationMs / 1000f)
-                playbackState = playbackState.copy(currentBeat = nextBeat)
+                
+                delay(beatDurationMs / 4)
             }
-            
-            delay(beatDurationMs / 4) // Update 4 times per beat for smooth animation
+        } catch (e: Exception) {
+            // Emit stopped state on any error
+            emit(currentState.copy(isPlaying = false))
+            throw e
         }
     }
     
-    fun handleEvent(event: ExerciseEngineEvent): ExercisePlaybackState {
-        playbackState = when (event) {
-            is ExerciseEngineEvent.Play -> playbackState.copy(isPlaying = true)
-            is ExerciseEngineEvent.Pause -> playbackState.copy(isPlaying = false)
-            is ExerciseEngineEvent.Stop -> playbackState.copy(
-                isPlaying = false,
-                currentBeat = 0f,
-                currentNoteIndex = 0,
+    /**
+     * Handles playback events and returns updated state
+     */
+    fun handleEvent(
+        event: ExerciseEngineEvent, 
+        currentState: ExercisePlaybackState
+    ): ExercisePlaybackState {
+        return when (event) {
+            is ExerciseEngineEvent.Play -> currentState.copy(isPlaying = true)
+            is ExerciseEngineEvent.Pause -> currentState.copy(isPlaying = false)
+            is ExerciseEngineEvent.Stop -> currentState.copy(
+                isPlaying = false, 
+                currentBeat = 0f, 
+                currentNoteIndex = 0, 
                 progress = 0f,
                 highlightedPositions = emptyList()
             )
-            is ExerciseEngineEvent.Reset -> playbackState.copy(
-                isPlaying = false,
-                currentBeat = 0f,
-                currentNoteIndex = 0,
-                progress = 0f,
-                highlightedPositions = emptyList()
-            )
-            is ExerciseEngineEvent.SetBpm -> playbackState.copy(bpm = event.bpm)
-            is ExerciseEngineEvent.SetLoop -> playbackState.copy(loop = event.loop)
-            is ExerciseEngineEvent.SetMetronome -> playbackState.copy(metronome = event.metronome)
-            is ExerciseEngineEvent.SeekTo -> playbackState.copy(currentBeat = event.beat)
+            is ExerciseEngineEvent.Reset -> ExercisePlaybackState(bpm = currentState.bpm)
+            is ExerciseEngineEvent.SetBpm -> currentState.copy(bpm = event.bpm.coerceIn(MIN_BPM, MAX_BPM))
+            is ExerciseEngineEvent.SetLoop -> currentState.copy(loop = event.loop)
+            is ExerciseEngineEvent.SetMetronome -> currentState.copy(metronome = event.metronome)
+            is ExerciseEngineEvent.SeekTo -> currentState.copy(currentBeat = event.beat.coerceAtLeast(0f))
         }
-        return playbackState
     }
     
-    fun getCurrentState(): ExercisePlaybackState = playbackState
-}
-
-@Singleton
-class MetronomeEngine @Inject constructor() {
+    private fun calculateBeatDuration(bpm: Int): Long {
+        return (MILLISECONDS_PER_MINUTE / bpm.coerceIn(MIN_BPM, MAX_BPM)).toLong()
+    }
     
-    fun startMetronome(bpm: Int): Flow<Boolean> = flow {
-        val beatDurationMs = (60000 / bpm).toLong()
-        while (true) {
-            emit(true) // Beat tick
-            delay(100) // Short tick sound duration
-            emit(false)
-            delay(beatDurationMs - 100)
+    private fun findActiveNotes(notes: List<Note>, currentBeat: Float): List<Note> {
+        return notes.filter { note ->
+            val noteStart = note.beat.toFloat()
+            val noteEnd = noteStart + note.duration.toFloat()
+            currentBeat >= noteStart && currentBeat < noteEnd
         }
+    }
+    
+    private fun createHighlightedPositions(activeNotes: List<Note>): List<FretPosition> {
+        return activeNotes.map { note ->
+            FretPosition(
+                string = note.stringNumber.coerceIn(1, 6),
+                fret = note.fret.coerceIn(0, 24),
+                note = note.noteName,
+                isHighlighted = true
+            )
+        }
+    }
+    
+    private fun calculateProgress(currentBeat: Float, totalBeats: Float): Float {
+        return if (totalBeats > 0) (currentBeat / totalBeats).coerceIn(0f, 1f) else 0f
+    }
+    
+    private fun findCurrentNoteIndex(notes: List<Note>, currentBeat: Float): Int {
+        return notes.indexOfFirst { it.beat.toFloat() > currentBeat }.let { 
+            if (it == -1) notes.size else it 
+        }.coerceIn(0, notes.size)
+    }
+    
+    companion object {
+        private const val BEAT_INCREMENT = 0.25f
+        private const val MILLISECONDS_PER_MINUTE = 60000
+        private const val MIN_BPM = 40
+        private const val MAX_BPM = 300
     }
 }
