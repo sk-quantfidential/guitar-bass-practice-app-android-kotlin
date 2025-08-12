@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quantfidential.guitarbasspractice.data.model.*
 import com.quantfidential.guitarbasspractice.domain.model.*
+import com.quantfidential.guitarbasspractice.domain.model.InstrumentType
+import com.quantfidential.guitarbasspractice.domain.model.DifficultyLevel
 
 fun ExerciseEntity.toDomain(): Exercise {
     val gson = Gson()

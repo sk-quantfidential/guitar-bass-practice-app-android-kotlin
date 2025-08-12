@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -75,7 +76,8 @@ data class OfflineCapabilities(
 
 @Singleton
 class OfflineModeManager @Inject constructor(
-    private val networkConnectivity: NetworkConnectivity
+    private val networkConnectivity: NetworkConnectivity,
+    @ApplicationContext private val context: Context
 ) {
     
     fun getCapabilities(): Flow<OfflineCapabilities> = 
@@ -103,7 +105,10 @@ class OfflineModeManager @Inject constructor(
     }
     
     private fun getCurrentConnectivityState(): Boolean {
-        return networkConnectivity.isConnected
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }
 

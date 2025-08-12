@@ -4,7 +4,7 @@ import com.quantfidential.guitarbasspractice.domain.model.*
 import com.quantfidential.guitarbasspractice.util.MusicTheoryUtil
 import com.quantfidential.guitarbasspractice.util.ScaleType
 import com.quantfidential.guitarbasspractice.util.ChordType
-import com.quantfidential.guitarbasspractice.presentation.ui.components.FretPosition
+import com.quantfidential.guitarbasspractice.util.FretPosition
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random

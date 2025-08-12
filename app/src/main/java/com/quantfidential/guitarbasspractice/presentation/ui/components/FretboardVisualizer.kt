@@ -15,6 +15,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,7 +39,7 @@ fun FretboardVisualizer(
     minFret: Int = 0,
     maxFret: Int = 12,
     highlightedPositions: List<FretPosition> = emptyList(),
-    onPositionClick: (string: Int, fret: Int) -> Unit = { _, _ -> },
+    @Suppress("UNUSED_PARAMETER") onPositionClick: (string: Int, fret: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val numStrings = instrument.getDefaultStringCount()
@@ -98,10 +100,9 @@ private fun FretboardCanvas(
     minFret: Int,
     maxFret: Int,
     highlightedPositions: List<FretPosition>,
-    onPositionClick: (string: Int, fret: Int) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onPositionClick: (string: Int, fret: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val density = LocalDensity.current
     
     Canvas(
         modifier = modifier
@@ -157,15 +158,15 @@ private fun FretboardCanvas(
                     center = Offset(x, y)
                 )
                 
-                // Draw note name
-                drawContext.canvas.nativeCanvas.apply {
+                // Draw note name using Compose text drawing
+                drawIntoCanvas { canvas ->
                     val textPaint = android.graphics.Paint().apply {
                         color = android.graphics.Color.WHITE
                         textSize = 12.sp.toPx()
                         textAlign = android.graphics.Paint.Align.CENTER
                         isFakeBoldText = true
                     }
-                    drawText(
+                    canvas.nativeCanvas.drawText(
                         position.note,
                         x,
                         y + 4.dp.toPx(),
@@ -179,14 +180,14 @@ private fun FretboardCanvas(
         for (string in 1..numStrings) {
             val y = string * stringSpacing
             if (string - 1 < tuning.size) {
-                drawContext.canvas.nativeCanvas.apply {
+                drawIntoCanvas { canvas ->
                     val textPaint = android.graphics.Paint().apply {
                         color = android.graphics.Color.GRAY
                         textSize = 14.sp.toPx()
                         textAlign = android.graphics.Paint.Align.CENTER
                         isFakeBoldText = true
                     }
-                    drawText(
+                    canvas.nativeCanvas.drawText(
                         tuning[string - 1],
                         -20.dp.toPx(),
                         y + 4.dp.toPx(),

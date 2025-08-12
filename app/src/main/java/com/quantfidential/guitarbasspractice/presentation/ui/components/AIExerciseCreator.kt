@@ -317,7 +317,7 @@ private fun PromptInputSection(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Generating...")
             } else {
-                Icon(Icons.Default.Auto_fix_high, contentDescription = null)
+                Icon(Icons.Default.AutoAwesome, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Generate with AI")
             }

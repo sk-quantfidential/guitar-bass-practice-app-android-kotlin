@@ -161,7 +161,7 @@ private fun ProfileCard(
 fun CreateProfileDialog(
     onDismiss: () -> Unit,
     onCreateProfile: (String, InstrumentType, DifficultyLevel, List<String>) -> Unit,
-    modifier: Modifier = Modifier
+    @Suppress("UNUSED_PARAMETER") modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }
     var selectedInstrument by remember { mutableStateOf(InstrumentType.GUITAR) }
