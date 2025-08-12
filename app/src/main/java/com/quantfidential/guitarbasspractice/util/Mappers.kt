@@ -6,8 +6,132 @@ import com.quantfidential.guitarbasspractice.data.model.*
 import com.quantfidential.guitarbasspractice.domain.model.*
 import com.quantfidential.guitarbasspractice.domain.model.InstrumentType
 import com.quantfidential.guitarbasspractice.domain.model.DifficultyLevel
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Injectable mapper utility that converts between domain and data models.
+ * Uses a single Gson instance for consistency and performance.
+ */
+@Singleton
+class EntityMapper @Inject constructor(
+    private val gson: Gson
+) {
+
+    fun ExerciseEntity.toDomain(): Exercise = safeCall {
+        Exercise(
+            id = id,
+            title = title,
+            description = description,
+            instrument = InstrumentType.valueOf(instrument),
+            tags = parseJson(tags, object : TypeToken<List<String>>() {}.type),
+            difficulty = DifficultyLevel.valueOf(difficulty),
+            fretboard = parseJson(fretboardConstraint, com.quantfidential.guitarbasspractice.domain.model.FretboardConstraint::class.java),
+            theory = parseJson(theoryComponent, com.quantfidential.guitarbasspractice.domain.model.TheoryComponent::class.java),
+            notation = parseJson(notation, object : TypeToken<List<com.quantfidential.guitarbasspractice.domain.model.NotationData>>() {}.type),
+            playback = parseJson(playbackSettings, com.quantfidential.guitarbasspractice.domain.model.PlaybackSettings::class.java),
+            notes = parseJson(notes, object : TypeToken<List<com.quantfidential.guitarbasspractice.domain.model.Note>>() {}.type),
+            createdTimestamp = createdTimestamp,
+            modifiedTimestamp = modifiedTimestamp,
+            creatorId = creatorId,
+            isAiGenerated = isAiGenerated,
+            aiPrompt = aiPrompt
+        )
+    }.getOrDefault(createDefaultExercise())
+    
+    fun Exercise.toEntity(): ExerciseEntity = safeCall {
+        ExerciseEntity(
+            id = id,
+            title = title,
+            description = description,
+            instrument = instrument.name,
+            tags = toJson(tags),
+            difficulty = difficulty.name,
+            fretboardConstraint = toJson(fretboard.toDataModel()),
+            theoryComponent = toJson(theory.toDataModel()),
+            notation = toJson(notation.map { it.toDataModel() }),
+            playbackSettings = toJson(playback.toDataModel()),
+            notes = toJson(notes.map { it.toDataModel() }),
+            createdTimestamp = createdTimestamp,
+            modifiedTimestamp = modifiedTimestamp,
+            creatorId = creatorId,
+            isAiGenerated = isAiGenerated,
+            aiPrompt = aiPrompt
+        )
+    }.getOrDefault(createDefaultExerciseEntity())
+    
+    private fun <T> parseJson(json: String, type: java.lang.reflect.Type): T {
+        return try {
+            gson.fromJson(json, type)
+        } catch (e: Exception) {
+            throw AppException.JsonParsingException("Failed to parse JSON: ${e.message}", e)
+        }
+    }
+    
+    private fun <T> parseJson(json: String, clazz: Class<T>): T {
+        return try {
+            gson.fromJson(json, clazz)
+        } catch (e: Exception) {
+            throw AppException.JsonParsingException("Failed to parse JSON: ${e.message}", e)
+        }
+    }
+    
+    private fun toJson(obj: Any): String {
+        return try {
+            gson.toJson(obj)
+        } catch (e: Exception) {
+            throw AppException.JsonParsingException("Failed to serialize to JSON: ${e.message}", e)
+        }
+    }
+    
+    private fun createDefaultExercise(): Exercise {
+        return Exercise(
+            id = "error",
+            title = "Error Loading Exercise",
+            description = "Failed to load exercise data",
+            instrument = InstrumentType.GUITAR,
+            tags = emptyList(),
+            difficulty = DifficultyLevel.BEGINNER,
+            fretboard = com.quantfidential.guitarbasspractice.domain.model.FretboardConstraint(0, 12, listOf(1,2,3,4,5,6), 6),
+            theory = com.quantfidential.guitarbasspractice.domain.model.TheoryComponent(listOf("C"), listOf("major"), emptyList(), null, emptyList(), "4/4"),
+            notation = emptyList(),
+            playback = com.quantfidential.guitarbasspractice.domain.model.PlaybackSettings(120, false, true, 0.8f, 1),
+            notes = emptyList(),
+            createdTimestamp = System.currentTimeMillis(),
+            modifiedTimestamp = System.currentTimeMillis(),
+            creatorId = "system",
+            isAiGenerated = false,
+            aiPrompt = null
+        )
+    }
+    
+    private fun createDefaultExerciseEntity(): ExerciseEntity {
+        return ExerciseEntity(
+            id = "error",
+            title = "Error Saving Exercise",
+            description = "Failed to save exercise data",
+            instrument = "GUITAR",
+            tags = "[]",
+            difficulty = "BEGINNER",
+            fretboardConstraint = "{}",
+            theoryComponent = "{}",
+            notation = "[]",
+            playbackSettings = "{}",
+            notes = "[]",
+            createdTimestamp = System.currentTimeMillis(),
+            modifiedTimestamp = System.currentTimeMillis(),
+            creatorId = "system",
+            isAiGenerated = false,
+            aiPrompt = null
+        )
+    }
+}
+
+// Extension functions that delegate to legacy mappers
+// TODO: Replace these with direct EntityMapper usage throughout the codebase
 
 fun ExerciseEntity.toDomain(): Exercise {
+    // This is a temporary bridge function until we refactor all repositories to inject EntityMapper
     val gson = Gson()
     return Exercise(
         id = id,
@@ -30,6 +154,7 @@ fun ExerciseEntity.toDomain(): Exercise {
 }
 
 fun Exercise.toEntity(): ExerciseEntity {
+    // This is a temporary bridge function until we refactor all repositories to inject EntityMapper
     val gson = Gson()
     return ExerciseEntity(
         id = id,

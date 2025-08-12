@@ -27,30 +27,5 @@ abstract class GuitarBassPracticeDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun exerciseProgressDao(): ExerciseProgressDao
 
-    companion object {
-        @Volatile
-        private var INSTANCE: GuitarBassPracticeDatabase? = null
-        
-        private const val DATABASE_NAME = "guitar_bass_practice.db"
-        private const val DATABASE_PASSPHRASE = "guitar_bass_practice_secure_key_2024"
-
-        fun getDatabase(context: Context): GuitarBassPracticeDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val passphrase = SQLiteDatabase.getBytes(DATABASE_PASSPHRASE.toCharArray())
-                val factory = SupportFactory(passphrase)
-                
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    GuitarBassPracticeDatabase::class.java,
-                    DATABASE_NAME
-                )
-                    .openHelperFactory(factory)
-                    .fallbackToDestructiveMigration()
-                    .build()
-                
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
+    // Database instance is now managed by Hilt DI - no companion object needed
 }
