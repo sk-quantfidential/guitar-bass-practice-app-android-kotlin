@@ -2,7 +2,7 @@ package com.quantfidential.guitarbasspractice.domain.usecase
 
 import com.quantfidential.guitarbasspractice.domain.model.Exercise
 import com.quantfidential.guitarbasspractice.domain.model.Note
-import com.quantfidential.guitarbasspractice.presentation.ui.components.FretPosition
+import com.quantfidential.guitarbasspractice.util.FretPosition
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -40,7 +40,7 @@ class ExerciseEngine @Inject constructor() {
     fun executeExercise(exercise: Exercise): Flow<ExercisePlaybackState> = flow {
         currentExercise = exercise
         val notes = exercise.notes.sortedBy { it.beat }
-        val totalBeats = notes.maxOfOrNull { it.beat + it.duration } ?: 4f
+        val totalBeats = notes.maxOfOrNull { it.beat + it.duration }?.toFloat() ?: 4f
         val beatDurationMs = (60000 / playbackState.bpm).toLong()
         
         playbackState = playbackState.copy(
@@ -59,7 +59,7 @@ class ExerciseEngine @Inject constructor() {
             
             val currentBeat = playbackState.currentBeat
             val activeNotes = notes.filter { note ->
-                note.beat <= currentBeat && note.beat + note.duration > currentBeat
+                note.beat.toFloat() <= currentBeat && note.beat.toFloat() + note.duration.toFloat() > currentBeat
             }
             
             val highlightedPositions = activeNotes.map { note ->
@@ -72,7 +72,7 @@ class ExerciseEngine @Inject constructor() {
             }
             
             val progress = if (totalBeats > 0) currentBeat / totalBeats else 0f
-            val currentNoteIndex = notes.indexOfFirst { it.beat > currentBeat }.let { 
+            val currentNoteIndex = notes.indexOfFirst { it.beat.toFloat() > currentBeat }.let { 
                 if (it == -1) notes.size else it 
             }
             

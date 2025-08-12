@@ -58,6 +58,11 @@ class MainViewModel @Inject constructor(
     val playbackState: StateFlow<ExercisePlaybackState> = _playbackState.asStateFlow()
 
     val isOnline: StateFlow<Boolean> = networkConnectivity.isConnected
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     init {
         loadInitialData()

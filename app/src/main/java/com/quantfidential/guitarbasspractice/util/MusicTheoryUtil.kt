@@ -1,5 +1,12 @@
 package com.quantfidential.guitarbasspractice.util
 
+data class FretPosition(
+    val string: Int,
+    val fret: Int,
+    val note: String,
+    val isHighlighted: Boolean = false
+)
+
 object MusicTheoryUtil {
     private val chromaticScale = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
     

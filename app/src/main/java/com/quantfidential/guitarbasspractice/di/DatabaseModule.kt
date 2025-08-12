@@ -1,56 +1,49 @@
 package com.quantfidential.guitarbasspractice.di
 
 import android.content.Context
+import androidx.room.Room
 import com.quantfidential.guitarbasspractice.data.database.*
-import com.quantfidential.guitarbasspractice.data.repository.*
-import com.quantfidential.guitarbasspractice.domain.repository.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
+    
+    private const val DATABASE_NAME = "guitar_bass_practice_db"
+    private const val DATABASE_PASSPHRASE = "guitar_bass_practice_secure_key_2024"
+    
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): GuitarBassPracticeDatabase {
-        return GuitarBassPracticeDatabase.getDatabase(context)
+        val passphrase = SQLiteDatabase.getBytes(DATABASE_PASSPHRASE.toCharArray())
+        val factory = SupportFactory(passphrase)
+        
+        return Room.databaseBuilder(
+            context,
+            GuitarBassPracticeDatabase::class.java,
+            DATABASE_NAME
+        )
+        .openHelperFactory(factory)
+        .fallbackToDestructiveMigration()
+        .build()
     }
-
+    
     @Provides
-    fun provideExerciseDao(database: GuitarBassPracticeDatabase): ExerciseDao {
-        return database.exerciseDao()
-    }
-
+    fun provideExerciseDao(database: GuitarBassPracticeDatabase): ExerciseDao = 
+        database.exerciseDao()
+    
     @Provides
-    fun provideUserProfileDao(database: GuitarBassPracticeDatabase): UserProfileDao {
-        return database.userProfileDao()
-    }
-
+    fun provideUserProfileDao(database: GuitarBassPracticeDatabase): UserProfileDao = 
+        database.userProfileDao()
+    
     @Provides
-    fun provideExerciseProgressDao(database: GuitarBassPracticeDatabase): ExerciseProgressDao {
-        return database.exerciseProgressDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideExerciseRepository(exerciseDao: ExerciseDao): ExerciseRepository {
-        return ExerciseRepositoryImpl(exerciseDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideUserProfileRepository(userProfileDao: UserProfileDao): UserProfileRepository {
-        return UserProfileRepositoryImpl(userProfileDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideExerciseProgressRepository(exerciseProgressDao: ExerciseProgressDao): ExerciseProgressRepository {
-        return ExerciseProgressRepositoryImpl(exerciseProgressDao)
-    }
+    fun provideExerciseProgressDao(database: GuitarBassPracticeDatabase): ExerciseProgressDao = 
+        database.exerciseProgressDao()
 }
