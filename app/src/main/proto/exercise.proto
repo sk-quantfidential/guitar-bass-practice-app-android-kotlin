@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package guitarbasspractice;
+
+option java_package = "com.quantfidential.guitarbasspractice.data.proto";
+option java_outer_classname = "ExerciseProto";
+
+enum DifficultyLevel {
+    BEGINNER = 0;
+    INTERMEDIATE = 1;
+    ADVANCED = 2;
+    EXPERT = 3;
+}
+
+enum InstrumentType {
+    GUITAR = 0;
+    BASS = 1;
+    UKULELE = 2;
+    MANDOLIN = 3;
+    BANJO = 4;
+}
+
+enum NotationType {
+    TAB = 0;
+    STAVE = 1;
+    CHORD_CHART = 2;
+    FRETBOARD = 3;
+}
+
+message FretboardConstraint {
+    int32 min_fret = 1;
+    int32 max_fret = 2;
+    repeated int32 allowed_strings = 3;
+    int32 num_strings = 4;
+}
+
+message TheoryComponent {
+    repeated string keys = 1;
+    repeated string scales = 2;
+    repeated string chords = 3;
+    string melody_line = 4;
+    repeated string intervals = 5;
+    string time_signature = 6;
+}
+
+message NotationData {
+    NotationType type = 1;
+    string content = 2;
+    int32 measure_count = 3;
+    string encoding = 4;
+}
+
+message PlaybackSettings {
+    int32 bpm = 1;
+    bool loop = 2;
+    bool metronome = 3;
+    float volume = 4;
+    int32 repeat_count = 5;
+}
+
+message Note {
+    int32 string_number = 1;
+    int32 fret = 2;
+    int32 beat = 3;
+    string note_name = 4;
+    int32 duration = 5;
+}
+
+message Exercise {
+    string id = 1;
+    string title = 2;
+    string description = 3;
+    InstrumentType instrument = 4;
+    repeated string tags = 5;
+    DifficultyLevel difficulty = 6;
+    FretboardConstraint fretboard = 7;
+    TheoryComponent theory = 8;
+    repeated NotationData notation = 9;
+    PlaybackSettings playback = 10;
+    repeated Note notes = 11;
+    int64 created_timestamp = 12;
+    int64 modified_timestamp = 13;
+    string creator_id = 14;
+    bool is_ai_generated = 15;
+    string ai_prompt = 16;
+}
+
+message UserProfile {
+    string id = 1;
+    string name = 2;
+    InstrumentType primary_instrument = 3;
+    DifficultyLevel skill_level = 4;
+    repeated string preferred_keys = 5;
+    repeated string favorite_genres = 6;
+    int64 created_timestamp = 7;
+    bool is_active = 8;
+}
+
+message ExerciseProgress {
+    string exercise_id = 1;
+    string user_id = 2;
+    int32 completion_percentage = 3;
+    int32 best_accuracy = 4;
+    int32 practice_time_seconds = 5;
+    int64 last_practiced = 6;
+    int32 practice_count = 7;
+    repeated int32 mistake_frets = 8;
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude sensitive data from backup -->
+    <exclude domain="database" path="guitar_bass_practice.db" />
+    <exclude domain="database" path="guitar_bass_practice.db-shm" />
+    <exclude domain="database" path="guitar_bass_practice.db-wal" />
+    
+    <!-- Include user preferences and exercises -->
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="exercises/" />
+</full-backup-content>
