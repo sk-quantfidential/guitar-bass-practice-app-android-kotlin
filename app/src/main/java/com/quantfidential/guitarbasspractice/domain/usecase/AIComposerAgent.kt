@@ -32,6 +32,33 @@ class AIComposerAgent @Inject constructor(
     private val gson: Gson
 ) {
     
+    suspend fun generateExercise(prompt: String, context: AIPromptContext): Exercise {
+        val systemPrompt = createSystemPrompt(context)
+        val userPrompt = createUserPrompt(prompt, context)
+        
+        val request = AIExerciseRequest(
+            messages = listOf(
+                ChatMessage("system", systemPrompt),
+                ChatMessage("user", userPrompt)
+            )
+        )
+        
+        val response = aiApi.generateExercise(request)
+        
+        if (response.isSuccessful && response.body() != null) {
+            val aiResponse = response.body()!!
+            val generatedContent = aiResponse.choices.firstOrNull()?.message?.content
+            
+            if (generatedContent != null) {
+                return parseAIResponse(generatedContent, prompt, context)
+            } else {
+                throw Exception("No content generated")
+            }
+        } else {
+            throw Exception("API Error: ${response.code()}")
+        }
+    }
+    
     fun generateExerciseFromPrompt(
         prompt: String,
         context: AIPromptContext

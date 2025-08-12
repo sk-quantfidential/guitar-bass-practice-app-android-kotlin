@@ -29,6 +29,61 @@ data class CustomizationOptions(
 @Singleton
 class ExerciseCustomizationEngine @Inject constructor() {
     
+    fun createCustomExercise(options: CustomizationOptions): Exercise {
+        val notes = when {
+            options.randomize -> generateRandomNotes(options)
+            options.scales.isNotEmpty() -> generateScaleExercise(options)
+            options.chords.isNotEmpty() -> generateChordExercise(options)
+            else -> generateRandomNotes(options)
+        }
+        
+        return Exercise(
+            id = java.util.UUID.randomUUID().toString(),
+            title = "Custom ${options.instrument.name} Exercise",
+            description = "Custom exercise for ${options.difficulty.name.lowercase()} level",
+            instrument = options.instrument,
+            tags = listOf("custom", options.difficulty.name.lowercase()),
+            difficulty = options.difficulty,
+            fretboard = FretboardConstraint(
+                minFret = options.minFret,
+                maxFret = options.maxFret,
+                allowedStrings = options.allowedStrings.ifEmpty { 
+                    (1..options.instrument.getDefaultStringCount()).toList() 
+                },
+                numStrings = options.instrument.getDefaultStringCount()
+            ),
+            theory = TheoryComponent(
+                keys = options.keys,
+                scales = options.scales,
+                chords = options.chords,
+                melodyLine = null,
+                intervals = emptyList(),
+                timeSignature = options.timeSignature
+            ),
+            notation = listOf(
+                NotationData(
+                    type = NotationType.TAB,
+                    content = "",
+                    measureCount = 1,
+                    encoding = null
+                )
+            ),
+            playback = PlaybackSettings(
+                bpm = options.bpm,
+                loop = options.loop,
+                metronome = options.metronome,
+                volume = 0.8f,
+                repeatCount = 1
+            ),
+            notes = notes,
+            createdTimestamp = System.currentTimeMillis(),
+            modifiedTimestamp = System.currentTimeMillis(),
+            creatorId = "user",
+            isAiGenerated = false,
+            aiPrompt = null
+        )
+    }
+    
     fun customizeExercise(
         baseExercise: Exercise,
         options: CustomizationOptions
