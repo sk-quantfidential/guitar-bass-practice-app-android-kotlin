@@ -255,7 +255,7 @@ class AIComposerAgent @Inject constructor(
         )
     }
     
-    fun getSuggestedPrompts(instrument: InstrumentType, difficulty: DifficultyLevel): List<String> {
+    fun getSuggestedPrompts(@Suppress("UNUSED_PARAMETER") instrument: InstrumentType, difficulty: DifficultyLevel): List<String> {
         return when (difficulty) {
             DifficultyLevel.BEGINNER -> listOf(
                 "Create a simple C major scale exercise",

@@ -17,6 +17,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -168,14 +170,14 @@ private fun TabNotation(
             
             // Draw string names
             if (string - 1 < tuning.size) {
-                drawContext.canvas.nativeCanvas.apply {
+                drawIntoCanvas { canvas ->
                     val textPaint = android.graphics.Paint().apply {
                         color = android.graphics.Color.GRAY
                         textSize = 12.sp.toPx()
                         textAlign = android.graphics.Paint.Align.RIGHT
                         isFakeBoldText = true
                     }
-                    drawText(
+                    canvas.nativeCanvas.drawText(
                         tuning[string - 1],
                         -10f,
                         y + 4.dp.toPx(),
@@ -213,17 +215,16 @@ private fun TabNotation(
             if (note.string > 0 && note.string <= numStrings) {
                 val x = note.beat * beatWidth
                 val y = note.string * stringSpacing
-                val color = if (note.isHighlighted) Color.Red else Color.Black
                 
                 // Draw fret number
-                drawContext.canvas.nativeCanvas.apply {
+                drawIntoCanvas { canvas ->
                     val textPaint = android.graphics.Paint().apply {
                         this.color = if (note.isHighlighted) android.graphics.Color.RED else android.graphics.Color.BLACK
                         textSize = 14.sp.toPx()
                         textAlign = android.graphics.Paint.Align.CENTER
                         isFakeBoldText = true
                     }
-                    drawText(
+                    canvas.nativeCanvas.drawText(
                         note.fret.toString(),
                         x,
                         y + 6.dp.toPx(),
@@ -261,13 +262,13 @@ private fun StaveNotation(
         }
         
         // Draw treble clef (simplified)
-        drawContext.canvas.nativeCanvas.apply {
+        drawIntoCanvas { canvas ->
             val textPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.BLACK
                 textSize = 48.sp.toPx()
                 textAlign = android.graphics.Paint.Align.LEFT
             }
-            drawText(
+            canvas.nativeCanvas.drawText(
                 "𝄞",
                 20f,
                 staffTop + 2 * lineSpacing + 16.dp.toPx(),
@@ -276,20 +277,20 @@ private fun StaveNotation(
         }
         
         // Draw time signature
-        drawContext.canvas.nativeCanvas.apply {
+        drawIntoCanvas { canvas ->
             val textPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.BLACK
                 textSize = 20.sp.toPx()
                 textAlign = android.graphics.Paint.Align.CENTER
                 isFakeBoldText = true
             }
-            drawText(
+            canvas.nativeCanvas.drawText(
                 timeSignature.split("/")[0],
                 100f,
                 staffTop + lineSpacing + 8.dp.toPx(),
                 textPaint
             )
-            drawText(
+            canvas.nativeCanvas.drawText(
                 timeSignature.split("/")[1],
                 100f,
                 staffTop + 3 * lineSpacing + 8.dp.toPx(),
@@ -337,20 +338,20 @@ private fun StaveNotation(
 
 @Composable
 private fun ChordChartNotation(
-    notes: List<TabNote>,
+    @Suppress("UNUSED_PARAMETER") notes: List<TabNote>,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier.width(600.dp)) {
         val canvasWidth = size.width
         val canvasHeight = size.height
         
-        drawContext.canvas.nativeCanvas.apply {
+        drawIntoCanvas { canvas ->
             val textPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.BLACK
                 textSize = 16.sp.toPx()
                 textAlign = android.graphics.Paint.Align.CENTER
             }
-            drawText(
+            canvas.nativeCanvas.drawText(
                 "Chord Chart View",
                 canvasWidth / 2,
                 canvasHeight / 2,
@@ -362,21 +363,21 @@ private fun ChordChartNotation(
 
 @Composable
 private fun FretboardNotation(
-    notes: List<TabNote>,
-    instrument: InstrumentType,
+    @Suppress("UNUSED_PARAMETER") notes: List<TabNote>,
+    @Suppress("UNUSED_PARAMETER") instrument: InstrumentType,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier.width(600.dp)) {
         val canvasWidth = size.width
         val canvasHeight = size.height
         
-        drawContext.canvas.nativeCanvas.apply {
+        drawIntoCanvas { canvas ->
             val textPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.BLACK
                 textSize = 16.sp.toPx()
                 textAlign = android.graphics.Paint.Align.CENTER
             }
-            drawText(
+            canvas.nativeCanvas.drawText(
                 "Fretboard Notation View",
                 canvasWidth / 2,
                 canvasHeight / 2,

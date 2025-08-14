@@ -18,12 +18,16 @@ import com.quantfidential.guitarbasspractice.domain.model.*
 import com.quantfidential.guitarbasspractice.domain.usecase.*
 import com.quantfidential.guitarbasspractice.presentation.ui.components.*
 import com.quantfidential.guitarbasspractice.presentation.viewmodel.MainViewModel
+import androidx.compose.ui.graphics.Color
+import com.quantfidential.guitarbasspractice.util.FretPosition as UtilFretPosition
+import com.quantfidential.guitarbasspractice.presentation.viewmodel.MainUiState
+import com.quantfidential.guitarbasspractice.presentation.viewmodel.MainEvent
 import com.quantfidential.guitarbasspractice.util.OfflineCapabilities
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    navController: NavController = rememberNavController(),
+    @Suppress("UNUSED_PARAMETER") navController: NavController = rememberNavController(),
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -107,7 +111,7 @@ fun MainScreen(
 private fun CurrentExerciseSection(
     exercise: Exercise,
     playbackState: ExercisePlaybackState,
-    onPlaybackEvent: (ExerciseEngineEvent) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onPlaybackEvent: (ExerciseEngineEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -136,7 +140,15 @@ private fun CurrentExerciseSection(
                 instrument = exercise.instrument,
                 minFret = exercise.fretboard.minFret,
                 maxFret = exercise.fretboard.maxFret,
-                highlightedPositions = playbackState.highlightedPositions,
+                highlightedPositions = playbackState.highlightedPositions.map { utilPos ->
+                    FretPosition(
+                        string = utilPos.string,
+                        fret = utilPos.fret,
+                        note = utilPos.note,
+                        isHighlighted = utilPos.isHighlighted,
+                        highlightColor = Color.Blue
+                    )
+                },
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             
@@ -204,7 +216,7 @@ private fun MainContentTabs(
             1 -> ExerciseCreationTab(
                 customizationOptions = uiState.customizationOptions,
                 onOptionsChanged = { onEvent(MainEvent.UpdateCustomizationOptions(it)) },
-                onCreateExercise = { onEvent(MainEvent.CreateCustomExercise) }
+                onCreateExercise = { onEvent(MainEvent.CreateCustomExercise()) }
             )
             2 -> AIExerciseTab(
                 generationResult = uiState.aiGenerationResult,
