@@ -11,9 +11,36 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.Immutable
 
+@Stable
+sealed class LoadingState {
+    object Idle : LoadingState()
+    data class Loading(val message: String = "Loading...") : LoadingState()
+}
+
+@Stable
+sealed class UiError {
+    data class NetworkError(val message: String) : UiError()
+    data class ValidationError(val message: String) : UiError()
+    data class ExerciseCreationError(val message: String) : UiError()
+    data class ProfileError(val message: String) : UiError()
+    data class UnknownError(val message: String) : UiError()
+    
+    fun toDisplayMessage(): String = when (this) {
+        is NetworkError -> "Network Error: $message"
+        is ValidationError -> "Validation Error: $message"
+        is ExerciseCreationError -> "Exercise Creation Failed: $message"
+        is ProfileError -> "Profile Error: $message"
+        is UnknownError -> "Error: $message"
+    }
+}
+
+@Stable
 data class MainUiState(
-    val isLoading: Boolean = false,
+    val loadingState: LoadingState = LoadingState.Idle,
+    val error: UiError? = null,
     val currentExercise: Exercise? = null,
     val exercises: List<Exercise> = emptyList(),
     val profiles: List<UserProfile> = emptyList(),
@@ -25,8 +52,11 @@ data class MainUiState(
     val suggestedPrompts: List<String> = emptyList(),
     val offlineCapabilities: OfflineCapabilities = OfflineCapabilities(),
     val showCreateProfileDialog: Boolean = false,
-    val errorMessage: String? = null
-)
+    // Legacy error message for backward compatibility
+    val errorMessage: String? = error?.toDisplayMessage()
+) {
+    val isLoading: Boolean = loadingState is LoadingState.Loading
+}
 
 sealed class MainEvent {
     data class SelectExercise(val exercise: Exercise) : MainEvent()
@@ -164,7 +194,10 @@ class MainViewModel @Inject constructor(
     private fun createCustomExercise(options: CustomizationOptions?) {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+                _uiState.value = _uiState.value.copy(
+                    loadingState = LoadingState.Loading("Creating exercise..."),
+                    error = null
+                )
                 
                 val customizedOptions = options ?: _uiState.value.customizationOptions
                 val exercise = customizationEngine.createCustomExercise(customizedOptions)
@@ -172,12 +205,12 @@ class MainViewModel @Inject constructor(
                 exerciseRepository.insertExercise(exercise)
                 selectExercise(exercise)
                 
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(loadingState = LoadingState.Idle)
                 
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Failed to create exercise: ${e.message ?: "Unknown error"}"
+                    loadingState = LoadingState.Idle,
+                    error = UiError.ExerciseCreationError(e.message ?: "Unknown error")
                 )
             }
         }

@@ -1,8 +1,9 @@
 package com.quantfidential.guitarbasspractice.presentation.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -58,86 +59,80 @@ fun AccessibilitySettingsDialog(
             }
         },
         text = {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Theme Mode Selection
-                item {
-                    AccessibilitySection(
-                        title = "Theme Mode",
-                        description = "Choose your preferred theme"
-                    ) {
-                        ThemeModeSelector(
-                            selectedMode = settings.themeMode,
-                            onModeSelected = { onSettingsChanged(settings.copy(themeMode = it)) }
-                        )
-                    }
+                AccessibilitySection(
+                    title = "Theme Mode",
+                    description = "Choose your preferred theme"
+                ) {
+                    ThemeModeSelector(
+                        selectedMode = settings.themeMode,
+                        onModeSelected = { onSettingsChanged(settings.copy(themeMode = it)) }
+                    )
                 }
                 
                 // Color Scheme Selection
-                item {
-                    AccessibilitySection(
-                        title = "Color Scheme",
-                        description = "Choose colors optimized for accessibility"
-                    ) {
-                        ColorSchemeSelector(
-                            selectedScheme = settings.colorSchemeType,
-                            onSchemeSelected = { onSettingsChanged(settings.copy(colorSchemeType = it)) }
-                        )
-                    }
+                AccessibilitySection(
+                    title = "Color Scheme",
+                    description = "Choose colors optimized for accessibility"
+                ) {
+                    ColorSchemeSelector(
+                        selectedScheme = settings.colorSchemeType,
+                        onSchemeSelected = { onSettingsChanged(settings.copy(colorSchemeType = it)) }
+                    )
                 }
                 
                 // Font Size Scale
-                item {
-                    AccessibilitySection(
-                        title = "Font Size",
-                        description = "Adjust text size for better readability"
-                    ) {
-                        FontSizeSelector(
-                            scale = settings.fontSizeScale,
-                            onScaleChanged = { onSettingsChanged(settings.copy(fontSizeScale = it)) }
-                        )
-                    }
+                AccessibilitySection(
+                    title = "Font Size",
+                    description = "Adjust text size for better readability"
+                ) {
+                    FontSizeSelector(
+                        scale = settings.fontSizeScale,
+                        onScaleChanged = { onSettingsChanged(settings.copy(fontSizeScale = it)) }
+                    )
                 }
                 
                 // Accessibility Toggles
-                item {
-                    AccessibilitySection(
-                        title = "Features",
-                        description = "Enable accessibility features"
+                AccessibilitySection(
+                    title = "Features",
+                    description = "Enable accessibility features"
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            AccessibilityToggle(
-                                label = "High Contrast",
-                                description = "Increase contrast for better visibility",
-                                checked = settings.highContrast,
-                                onCheckedChange = { onSettingsChanged(settings.copy(highContrast = it)) }
-                            )
-                            
-                            AccessibilityToggle(
-                                label = "Reduce Motion",
-                                description = "Minimize animations and transitions",
-                                checked = settings.reduceMotion,
-                                onCheckedChange = { onSettingsChanged(settings.copy(reduceMotion = it)) }
-                            )
-                            
-                            AccessibilityToggle(
-                                label = "Haptic Feedback",
-                                description = "Vibration feedback for interactions",
-                                checked = settings.hapticFeedback,
-                                onCheckedChange = { onSettingsChanged(settings.copy(hapticFeedback = it)) }
-                            )
-                            
-                            AccessibilityToggle(
-                                label = "Audio Feedback",
-                                description = "Sound cues for interactions",
-                                checked = settings.audioFeedback,
-                                onCheckedChange = { onSettingsChanged(settings.copy(audioFeedback = it)) }
-                            )
-                        }
+                        AccessibilityToggle(
+                            label = "High Contrast",
+                            description = "Increase contrast for better visibility",
+                            checked = settings.highContrast,
+                            onCheckedChange = { onSettingsChanged(settings.copy(highContrast = it)) }
+                        )
+                        
+                        AccessibilityToggle(
+                            label = "Reduce Motion",
+                            description = "Minimize animations and transitions",
+                            checked = settings.reduceMotion,
+                            onCheckedChange = { onSettingsChanged(settings.copy(reduceMotion = it)) }
+                        )
+                        
+                        AccessibilityToggle(
+                            label = "Haptic Feedback",
+                            description = "Vibration feedback for interactions",
+                            checked = settings.hapticFeedback,
+                            onCheckedChange = { onSettingsChanged(settings.copy(hapticFeedback = it)) }
+                        )
+                        
+                        AccessibilityToggle(
+                            label = "Audio Feedback",
+                            description = "Sound cues for interactions",
+                            checked = settings.audioFeedback,
+                            onCheckedChange = { onSettingsChanged(settings.copy(audioFeedback = it)) }
+                        )
                     }
                 }
             }

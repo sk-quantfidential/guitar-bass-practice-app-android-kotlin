@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -340,11 +342,13 @@ private fun SuggestedPromptsSection(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             
-            LazyColumn(
+            Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.height(120.dp)
+                modifier = Modifier
+                    .height(120.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                items(prompts) { prompt ->
+                prompts.forEach { prompt ->
                     SuggestionChip(
                         onClick = { onPromptSelected(prompt) },
                         label = { Text(prompt, fontSize = 12.sp) },
