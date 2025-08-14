@@ -232,10 +232,10 @@ class ExampleUnitTest {
         
         val sortedLevels = levels.sorted()
         val expected = listOf(
-            DifficultyLevel.ADVANCED,
             DifficultyLevel.BEGINNER,
-            DifficultyLevel.EXPERT,
-            DifficultyLevel.INTERMEDIATE
+            DifficultyLevel.INTERMEDIATE,
+            DifficultyLevel.ADVANCED,
+            DifficultyLevel.EXPERT
         )
         
         // Note: This tests alphabetical sorting, not difficulty ordering
