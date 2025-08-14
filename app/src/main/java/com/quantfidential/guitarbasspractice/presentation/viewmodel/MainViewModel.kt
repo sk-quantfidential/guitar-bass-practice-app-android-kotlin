@@ -39,6 +39,7 @@ sealed class MainEvent {
     data class SetSelectedTab(val tab: Int) : MainEvent()
     object ShowCreateProfileDialog : MainEvent()
     object HideCreateProfileDialog : MainEvent()
+    object ClearError : MainEvent()
 }
 
 @HiltViewModel
@@ -124,6 +125,7 @@ class MainViewModel @Inject constructor(
             is MainEvent.SetSelectedTab -> setSelectedTab(event.tab)
             is MainEvent.ShowCreateProfileDialog -> showCreateProfileDialog()
             is MainEvent.HideCreateProfileDialog -> hideCreateProfileDialog()
+            is MainEvent.ClearError -> clearError()
         }
     }
 
@@ -149,24 +151,47 @@ class MainViewModel @Inject constructor(
 
     private fun createCustomExercise(options: CustomizationOptions?) {
         viewModelScope.launch {
-            val customOptions = options ?: _uiState.value.customizationOptions
-            val template = ExerciseTemplates.getAllTemplates().first()
-            val exercise = customizationEngine.generateExerciseFromTemplate(template, customOptions)
-            
-            exerciseRepository.insertExercise(exercise)
-            selectExercise(exercise)
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+                
+                val customizedOptions = options ?: _uiState.value.customizationOptions
+                val exercise = customizationEngine.createCustomExercise(customizedOptions)
+                
+                exerciseRepository.insertExercise(exercise)
+                selectExercise(exercise)
+                
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Failed to create exercise: ${e.message ?: "Unknown error"}"
+                )
+            }
         }
     }
+    
 
     private fun generateAIExercise(prompt: String, context: AIPromptContext) {
         viewModelScope.launch {
-            aiComposerAgent.generateExerciseFromPrompt(prompt, context).collect { result ->
-                _uiState.value = _uiState.value.copy(aiGenerationResult = result)
+            try {
+                _uiState.value = _uiState.value.copy(
+                    aiGenerationResult = AIGenerationResult.Loading
+                )
                 
-                if (result is AIGenerationResult.Success) {
-                    exerciseRepository.insertExercise(result.exercise)
-                    selectExercise(result.exercise)
-                }
+                val exercise = aiComposerAgent.generateExercise(prompt, context)
+                
+                exerciseRepository.insertExercise(exercise)
+                selectExercise(exercise)
+                
+                _uiState.value = _uiState.value.copy(
+                    aiGenerationResult = AIGenerationResult.Success(exercise)
+                )
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    aiGenerationResult = AIGenerationResult.Error("AI generation failed: ${e.message ?: "Unknown error"}")
+                )
             }
         }
     }
@@ -223,5 +248,9 @@ class MainViewModel @Inject constructor(
 
     fun hideCreateProfileDialog() {
         _uiState.value = _uiState.value.copy(showCreateProfileDialog = false)
+    }
+    
+    private fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 }
