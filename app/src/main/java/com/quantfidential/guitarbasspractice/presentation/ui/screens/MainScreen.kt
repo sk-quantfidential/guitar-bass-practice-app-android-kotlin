@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import com.quantfidential.guitarbasspractice.util.FretPosition as UtilFretPosition
 import com.quantfidential.guitarbasspractice.presentation.viewmodel.MainUiState
 import com.quantfidential.guitarbasspractice.presentation.viewmodel.MainEvent
+import com.quantfidential.guitarbasspractice.presentation.viewmodel.LoadingState
 import com.quantfidential.guitarbasspractice.util.OfflineCapabilities
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,9 +45,13 @@ fun MainScreen(
                 title = { Text("Guitar & Bass Practice") },
                 actions = {
                     IconButton(
-                        onClick = { /* TODO: Settings */ }
+                        onClick = { /* TODO: Settings */ },
+                        modifier = Modifier.semantics {
+                            contentDescription = "Open settings menu"
+                            role = Role.Button
+                        }
                     ) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = null)
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -72,12 +78,17 @@ fun MainScreen(
                 capabilities = uiState.offlineCapabilities
             )
             
-            // Error message display
+            // Error message display with accessibility
             uiState.errorMessage?.let { errorMessage ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 8.dp)
+                        .semantics {
+                            liveRegion = LiveRegionMode.Assertive
+                            contentDescription = "Error: $errorMessage"
+                            role = Role.Button
+                        },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                 ) {
                     Row(
@@ -100,16 +111,31 @@ fun MainScreen(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(
-                            onClick = { viewModel.handleEvent(MainEvent.ClearError) }
+                            onClick = { viewModel.handleEvent(MainEvent.ClearError) },
+                            modifier = Modifier.semantics {
+                                contentDescription = "Dismiss error message"
+                                role = Role.Button
+                            }
                         ) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "Close",
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                     }
                 }
+            }
+            
+            // Loading indicator with enhanced state management
+            when (val loadingState = uiState.loadingState) {
+                is LoadingState.Loading -> {
+                    LoadingDisplay(
+                        message = loadingState.message,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
+                LoadingState.Idle -> { /* No loading indicator */ }
             }
             
             // User Profile Selector
@@ -176,20 +202,26 @@ private fun CurrentExerciseSection(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             
-            // Fretboard Visualizer
+            // Fretboard Visualizer - optimized to avoid expensive mapping in composition
+            val highlightedPositions by remember(playbackState.highlightedPositions) {
+                derivedStateOf {
+                    playbackState.highlightedPositions.map { utilPos ->
+                        FretPosition(
+                            string = utilPos.string,
+                            fret = utilPos.fret,
+                            note = utilPos.note,
+                            isHighlighted = utilPos.isHighlighted,
+                            highlightColor = Color.Blue
+                        )
+                    }
+                }
+            }
+            
             FretboardVisualizer(
                 instrument = exercise.instrument,
                 minFret = exercise.fretboard.minFret,
                 maxFret = exercise.fretboard.maxFret,
-                highlightedPositions = playbackState.highlightedPositions.map { utilPos ->
-                    FretPosition(
-                        string = utilPos.string,
-                        fret = utilPos.fret,
-                        note = utilPos.note,
-                        isHighlighted = utilPos.isHighlighted,
-                        highlightColor = Color.Blue
-                    )
-                },
+                highlightedPositions = highlightedPositions,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             
@@ -298,17 +330,17 @@ private fun ExerciseCreationTab(
     onCreateExercise: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp)
+    // Single scrolling container - let ExerciseCustomizationPanel handle its own scrolling
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
-        item {
-            ExerciseCustomizationPanel(
-                options = customizationOptions,
-                onOptionsChanged = onOptionsChanged,
-                onCreateExercise = onCreateExercise
-            )
-        }
+        ExerciseCustomizationPanel(
+            options = customizationOptions,
+            onOptionsChanged = onOptionsChanged,
+            onCreateExercise = onCreateExercise
+        )
     }
 }
 
@@ -322,48 +354,48 @@ private fun AIExerciseTab(
     onGenerateExercise: (String, AIPromptContext) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp)
+    // Single scrolling container - let AIExerciseCreator handle its own scrolling
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            if (!isOnline) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
+        if (!isOnline) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp)
+                        .padding(16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.CloudOff,
-                            contentDescription = "Offline",
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "AI features require internet connection",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
+                    Icon(
+                        Icons.Default.CloudOff,
+                        contentDescription = "Offline",
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "AI features require internet connection",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
                 }
             }
-            
-            AIExerciseCreator(
-                generationResult = generationResult,
-                context = context,
-                suggestedPrompts = suggestedPrompts,
-                onContextChanged = onContextChanged,
-                onGenerateExercise = onGenerateExercise
-            )
         }
+        
+        AIExerciseCreator(
+            generationResult = generationResult,
+            context = context,
+            suggestedPrompts = suggestedPrompts,
+            onContextChanged = onContextChanged,
+            onGenerateExercise = onGenerateExercise,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

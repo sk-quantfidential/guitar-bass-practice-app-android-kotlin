@@ -2,8 +2,9 @@ package com.quantfidential.guitarbasspractice.presentation.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -162,77 +163,60 @@ fun OfflineCapabilitiesDialog(
             }
         },
         text = {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                item {
-                    Text(
-                        text = if (isOnline) 
-                            "All features are available with internet connection." 
-                        else 
-                            "Core features are available offline. Online features require internet connection.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+                Text(
+                    text = if (isOnline) 
+                        "All features are available with internet connection." 
+                    else 
+                        "Core features are available offline. Online features require internet connection.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "Exercise Creation & Storage",
-                        isAvailable = capabilities.exerciseCreation
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "Exercise Creation & Storage",
+                    isAvailable = capabilities.exerciseCreation
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "Exercise Playback",
-                        isAvailable = capabilities.exercisePlayback
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "Exercise Playback",
+                    isAvailable = capabilities.exercisePlayback
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "Fretboard Visualization",
-                        isAvailable = capabilities.fretboardVisualization
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "Fretboard Visualization",
+                    isAvailable = capabilities.fretboardVisualization
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "Notation Rendering",
-                        isAvailable = capabilities.notationRendering
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "Notation Rendering",
+                    isAvailable = capabilities.notationRendering
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "User Profiles",
-                        isAvailable = capabilities.userProfiles
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "User Profiles",
+                    isAvailable = capabilities.userProfiles
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "Exercise Customization",
-                        isAvailable = capabilities.customization
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "Exercise Customization",
+                    isAvailable = capabilities.customization
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "AI Exercise Generation",
-                        isAvailable = capabilities.aiGeneration,
-                        isOnlineRequired = !capabilities.aiGeneration && !isOnline
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "AI Exercise Generation",
+                    isAvailable = capabilities.aiGeneration,
+                    isOnlineRequired = !capabilities.aiGeneration && !isOnline
+                )
                 
-                item {
-                    FeatureAvailabilityIndicator(
-                        featureName = "Cloud Sync",
-                        isAvailable = capabilities.cloudSync,
-                        isOnlineRequired = !capabilities.cloudSync && !isOnline
-                    )
-                }
+                FeatureAvailabilityIndicator(
+                    featureName = "Cloud Sync",
+                    isAvailable = capabilities.cloudSync,
+                    isOnlineRequired = !capabilities.cloudSync && !isOnline
+                )
             }
         },
         confirmButton = {
